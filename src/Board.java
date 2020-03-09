@@ -5,8 +5,10 @@ import java.util.Set;
 
 public class Board {
 	
-	private Node[][] board;
-	private int size;
+	public Node[][] board;
+	public final int size;
+	
+	public Set<Node> known;
 	
 	public Board(int size, List<Node> clues) {
 		
@@ -22,10 +24,12 @@ public class Board {
 		
 		Set<Integer> taken = new HashSet<>();
 		
+		known = new HashSet<>(clues);
+		
 		for (Node clue : clues) {
 			board[clue.row][clue.col] = clue;
 			
-			taken.add(clue.value());
+			taken.add(clue.value);
 		}
 		
 		domain.removeAll(taken);
@@ -34,7 +38,7 @@ public class Board {
 			for (int c = 0; c < size; c++) {
 				
 				if (board[r][c] == null) {
-					board[r][c] = new Node(domain, c, r);
+					board[r][c] = new Node(0, c, r);
 				}
 				
 			}
@@ -43,8 +47,36 @@ public class Board {
 	}
 	
 	
-	public List<Node> getNeighbors(Node n) {
-		List<Node> neighbors = new ArrayList<Node>();
+	public Board(int size) {
+		
+		this.size = size;
+		
+		board = new Node[size][size];
+		
+		Set<Integer> domain = new HashSet<>();
+		
+		for (int i = 1; i <= size * size; i++) {
+			domain.add(i);
+		}
+		
+		//init the board
+		for (int r = 0; r < size; r++) {
+			for (int c = 0; c < size; c++) {
+				
+				if (board[r][c] == null) {
+					board[r][c] = new Node(0, c, r);
+				}
+				
+			}
+		}
+		
+		known = new HashSet<>();
+		
+	}
+	
+	
+	public Set<Node> getNeighbors(Node n) {
+		Set<Node> neighbors = new HashSet<Node>();
 		
 		if (n.row > 0) {
 			neighbors.add(board[n.row - 1][n.col]);
@@ -70,7 +102,7 @@ public class Board {
 		
 		for (int r = 0; r < size; r++) {
 			for (int c = 0; c < size; c++) {
-				if (board[r][c].size() != 1) {
+				if (board[r][c].value == 0) {
 					return false;
 				}
 			}
@@ -93,12 +125,12 @@ public class Board {
 				
 				Node n = board[r][c];
 				
-				if (n.size() == 1) {
-					if (n.value() < 10) {
+				if (n.value != 0) {
+					if (n.value < 10) {
 						sb.append(" ");
 					}
 					
-					sb.append(n.value());
+					sb.append(n.value);
 					
 				} else {
 					sb.append("  ");

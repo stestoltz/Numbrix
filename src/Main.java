@@ -7,6 +7,8 @@ public class Main {
 
 		List<Node> clues = new ArrayList<>();
 		
+		Node one = new Node(1, 7, 1);
+		
 		clues.add(new Node(37, 0, 0));
 		clues.add(new Node(31, 2, 0));
 		clues.add(new Node(21, 4, 0));
@@ -15,7 +17,7 @@ public class Main {
 		clues.add(new Node(35, 1, 1));
 		clues.add(new Node(29, 3, 1));
 		clues.add(new Node(19, 5, 1));
-		clues.add(new Node(1, 7, 1));
+		clues.add(one);
 		clues.add(new Node(39, 0, 2));
 		clues.add(new Node(7, 8, 2));
 		clues.add(new Node(43, 1, 3));
@@ -40,6 +42,17 @@ public class Main {
 		
 		
 		System.out.println(numbrix.getBoard());
+		
+		
+		Solver solver = new Solver(numbrix);
+		
+		Board solved = solver.solve(one);
+		
+		if (solved == null) {
+			System.out.println("No solution");
+		} else {
+			System.out.println(solved.getBoard());
+		}
 
 	}
 
