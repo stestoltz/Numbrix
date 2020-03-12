@@ -1,61 +1,110 @@
-import java.util.HashSet;
-import java.util.Set;
 
 public class Solver {
 	
-	private Board board;
+	private Board clueBoard;
 
-	public Solver(Board board) {
-		this.board = board;
+	public Solver(Board clueBoard) {
+		this.clueBoard = clueBoard;
 	}
 	
-	public Board solve(Node oneNode) {
+	/**
+	 * Solve a board
+	 * @return a solved board, or null if there is no solution
+	 */
+	public Board solve() {
 		
-		Board working = new Board(board.size);
+		Board working = new Board(clueBoard.size);
 		
-		working.board[oneNode.row][oneNode.col] = oneNode; 
-		
-		return placeNumber(2, oneNode, working);
+		return backtrack(working);
 	}
 	
+	/**
+	 * Start backtracking by finding the 1 clue
+	 * If it does not exist, try placing 1 in every empty spot
+	 * @param working
+	 * @return
+	 */
+	public Board backtrack(Board working) {
+		
+		// if we find a clue which is one, make the recursive call
+		for (Node n : clueBoard.clues) {
+			if (n.value == 1) {
+				working.board[n.row][n.col] = n; 
+				return placeNumber(2, n, working);
+			}
+		}
+		
+		// we did not find a one node - assign one to all empty nodes and try from there
+		
+		for (int r = 0; r < clueBoard.size; r++) {
+			for (int c = 0; c < clueBoard.size; c++) {
+				Node n = clueBoard.board[r][c];
+				
+				// if node has no value
+				if (n.value == 0) {
+					
+					// try one at that value, with a copied board
+					Board newWorking = new Board(working);
+					Node oneNode = newWorking.board[r][c];
+					oneNode.value = 1;
+					Board result = placeNumber(2, oneNode, newWorking);
+					
+					if (result != null) {
+						return result;
+					}
+					
+					// otherwise - keep looping, try a different one node
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Recursive backtracking call - for number n, try to place it at valid locations
+	 * @param n number to place
+	 * @param current last placed node
+	 * @param working current board
+	 * @return a board with number n placed at an empty node adjacent to current
+	 */
 	public Board placeNumber(int n, Node current, Board working) {
-		
-		//System.out.println("placeNumber: " + n);
 		
 		//System.out.println(working.getBoard());
 		
-		if (!isCompatible(working, board)) {
+		// if the board is no longer compatible with the original board, return null
+		if (!isCompatible(working, n)) {
 			return null;
 		}
 		
-		if (n > board.size * board.size) {
+		// if we have placed all numbers, return the board
+		if (n > clueBoard.size * clueBoard.size) {
 			return working;
 		}
 		
-		int row = current.row;
-		int col = current.col;
-		
+		// for each neighbor node to the current node
 		for (Node next : working.getNeighbors(current)) {
 			
+			// if it is empty
 			if (next.value == 0) {
 				
-				// place the current one
+				// place n at that node
 				working.board[next.row][next.col].value = n;
 				
 				// backtracking call
 				Board nextBoard = placeNumber(n + 1, next, working);
 
 				
-				// undo
+				// undo if placement did not result in a successful completed board
 				
 				if (nextBoard == null) {
 				
 					// make a new domain
-					Set<Integer> domain = new HashSet<>();
+					//Set<Integer> domain = new HashSet<>();
 					
-					for (int i = 1; i <= board.size * board.size; i++) {
-						domain.add(i);
-					}
+					//for (int i = 1; i <= board.size * board.size; i++) {
+					//	domain.add(i);
+					//}
 					
 					working.board[next.row][next.col].value = 0;
 				} else {
@@ -72,16 +121,26 @@ public class Solver {
 		
 	}
 	
-	public boolean isCompatible(Board base, Board clued) {
+	/**
+	 * Checks to see if the in-progress board is still compatible with the original board
+	 * @param base in-progress board
+	 * @return true if the boards are compatible
+	 */
+	public boolean isCompatible(Board base, int n) {
 		
 		boolean valid = true;
 		
-		for (Node n : clued.known) {
+		for (Node node : clueBoard.clues) {
 			
-			// if the base node at the clue's location has the clue in its domain
-			if (base.board[n.row][n.col].value == 0 || base.board[n.row][n.col].value == n.value) {
-				// good
-			} else {
+			Node baseNode = base.board[node.row][node.col];
+			
+			// if the base node at the clue's location does not have the clue in its domain
+			boolean clueHasOtherValue = !(baseNode.value == 0 || baseNode.value == node.value);
+			
+			// if the node has already been placed and its was not placed on its clue
+			boolean clueNotFulfilled = node.value < n && baseNode.value != node.value;
+			
+			if (clueHasOtherValue || clueNotFulfilled) {
 				valid = false;
 				break;
 			}
@@ -91,102 +150,4 @@ public class Solver {
 		return valid;
 		
 	}
-	
-	/*public Board solve2() {
-		
-		Set<Node> allNodes = new HashSet<Node>();
-		
-		for (int i = 0; i < board.size; i++) {
-			for (int j = 0; j < board.size; j++) {
-				allNodes.add(board.board[i][j]);
-			}
-		}
-		
-		
-		//remove neighbors from all other domains
-		
-		
-		// while not completed
-		while (board.known.size() < board.size * board.size) {
-			
-			System.out.println();
-			System.out.println(board.getBoard());
-			
-			//System.out.println(board.board[0][7].getDomain());
-			
-			Set<Node> unknown = new HashSet<>(allNodes);
-		
-			unknown.removeAll(board.known);
-			
-			for (Node known : board.known) {
-				
-				Set<Node> unknownNotNeighbors = new HashSet<>(unknown);
-				
-				unknownNotNeighbors.removeAll(board.getNeighbors(known));
-				
-				for (Node n : unknownNotNeighbors) {
-					
-					// remove adjacent values from all domains that are not adjacent
-					
-					n.getDomain().remove(known.value() + 1);
-					n.getDomain().remove(known.value() - 1);
-					
-					if (n.size() == 1) {
-						board.known.add(n);
-					}
-				}
-				
-				// if value is only in one domain
-				
-				Node location = null;
-				int value = known.value() + 1;
-				
-				for (Node un : unknown) {
-					
-					// do with n + 1
-					
-					if (un.getDomain().contains(value)) {
-						if (location == null) {
-							location = un;
-						} else {
-							location = null;
-							break;
-						}
-					}
-					
-				}
-				
-				if (location != null) {
-					board.known.add(location);
-				}
-				
-				location = null;
-				value = known.value() - 1;
-				
-				for (Node un : unknown) {
-					
-					// do with n + 1
-					
-					if (un.getDomain().contains(value)) {
-						if (location == null) {
-							location = un;
-						} else {
-							location = null;
-							break;
-						}
-					}
-					
-				}
-				
-				if (location != null) {
-					board.known.add(location);
-				}
-				
-			}
-		
-		}
-		
-		return board;
-	}
-*/
 }

@@ -8,44 +8,30 @@ public class Board {
 	public Node[][] board;
 	public final int size;
 	
-	public Set<Node> known;
+	public List<Node> clues;
 	
 	public Board(int size, List<Node> clues) {
 		
 		this.size = size;
-		
+		this.clues = clues;
 		board = new Node[size][size];
 		
-		Set<Integer> domain = new HashSet<>();
-		
-		for (int i = 1; i <= size * size; i++) {
-			domain.add(i);
-		}
-		
-		Set<Integer> taken = new HashSet<>();
-		
-		known = new HashSet<>(clues);
-		
+		// setup the clue nodes in the board
 		for (Node clue : clues) {
 			board[clue.row][clue.col] = clue;
-			
-			taken.add(clue.value);
 		}
-		
-		domain.removeAll(taken);
 		
 		for (int r = 0; r < size; r++) {
 			for (int c = 0; c < size; c++) {
 				
+				// set non-clued nodes to default values of 0
 				if (board[r][c] == null) {
 					board[r][c] = new Node(0, c, r);
 				}
-				
 			}
 		}
 		
-	}
-	
+	}	
 	
 	public Board(int size) {
 		
@@ -53,11 +39,7 @@ public class Board {
 		
 		board = new Node[size][size];
 		
-		Set<Integer> domain = new HashSet<>();
-		
-		for (int i = 1; i <= size * size; i++) {
-			domain.add(i);
-		}
+		this.clues = new ArrayList<>();
 		
 		//init the board
 		for (int r = 0; r < size; r++) {
@@ -70,8 +52,26 @@ public class Board {
 			}
 		}
 		
-		known = new HashSet<>();
+	}
+	
+	// copy constructor
+	public Board(Board b) {
+		this.clues = new ArrayList<>();
 		
+		for (Node n : b.clues) {
+			clues.add(n);
+		}
+		
+		this.size = b.size;
+
+		board = new Node[size][size];
+		
+		// copy all nodes over to this board
+		for (int r = 0; r < size; r++) {
+			for (int c = 0; c < size; c++) {
+				board[r][c] = new Node(b.board[r][c]);
+			}
+		}
 	}
 	
 	

@@ -17,4 +17,11 @@ public class Node {
 		this.row = row;
 	}
 	
+	// copy constructor
+	public Node(Node n) {
+		this.value = n.value;
+		this.col = n.col;
+		this.row = n.row;
+	}
+	
 }
