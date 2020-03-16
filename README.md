@@ -2,7 +2,8 @@
  
 ## File Formatting
 
-First line is size, n, of the matrix
+First line is size, n, of the matrix.
+
 The next rest of the file consists of n lines that have n entries of numbers with commas seperating them, including a trailing comma. Empty spaces can be written as empty space or 0.
 
     9
