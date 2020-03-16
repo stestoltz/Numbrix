@@ -1,10 +1,23 @@
+import java.util.ArrayList;
+import java.util.List;
 
 public class Solver {
+
+	public final int SHORTEST = 1;
+	public final int CLOSEST = 2;
+	public final int RANDOM = 3;
 	
 	private Board clueBoard;
+	private final int heuristic;
 
-	public Solver(Board clueBoard) {
+	public Solver(Board clueBoard, int heuristic) throws Exception {
 		this.clueBoard = clueBoard;
+		
+		if (heuristic == CLOSEST || heuristic == SHORTEST || heuristic == RANDOM) {
+			this.heuristic = heuristic;
+		} else {
+			throw new Exception("Heuristic value is not valid");
+		}
 	}
 	
 	/**
@@ -21,8 +34,8 @@ public class Solver {
 	/**
 	 * Start backtracking by finding the 1 clue
 	 * If it does not exist, try placing 1 in every empty spot
-	 * @param working
-	 * @return
+	 * @param working the board we will change
+	 * @return the solved board, or null if no solution
 	 */
 	public Board backtrack(Board working) {
 		
@@ -66,14 +79,14 @@ public class Solver {
 	 * @param n number to place
 	 * @param current last placed node
 	 * @param working current board
-	 * @return a board with number n placed at an empty node adjacent to current
+	 * @return the solved board, or null if no solution
 	 */
 	public Board placeNumber(int n, Node current, Board working) {
 		
-		//System.out.println(working.getBoard());
+		Node nextHint = clueBoard.getSmallestClueAfter(current.value);
 		
 		// if the board is no longer compatible with the original board, return null
-		if (!isCompatible(working, n)) {
+		if (!isCompatible(working, n, current, nextHint)) {
 			return null;
 		}
 		
@@ -82,8 +95,26 @@ public class Solver {
 			return working;
 		}
 		
-		// for each neighbor node to the current node
-		for (Node next : working.getNeighbors(current)) {
+		List<Node> neighbors = new ArrayList<>();
+		
+		if (heuristic == SHORTEST) {
+			
+			// heuristic for shortest Manhattan distance to next clue
+			neighbors = working.getOptimizedNeighborsShortest(current, nextHint);
+			
+		} else if (heuristic == CLOSEST) {
+			
+			// heuristic for closest Manhattan distance to actual numerical distance to next clue
+			neighbors = working.getOptimizedNeighborsClosest(current, nextHint);
+			
+		} else if (heuristic == RANDOM) {
+			
+			// random heuristic
+			neighbors = working.getNeighbors(current);
+		}
+		
+		
+		for (Node next : neighbors) {
 			
 			// if it is empty
 			if (next.value == 0) {
@@ -98,23 +129,12 @@ public class Solver {
 				// undo if placement did not result in a successful completed board
 				
 				if (nextBoard == null) {
-				
-					// make a new domain
-					//Set<Integer> domain = new HashSet<>();
-					
-					//for (int i = 1; i <= board.size * board.size; i++) {
-					//	domain.add(i);
-					//}
 					
 					working.board[next.row][next.col].value = 0;
 				} else {
 					return nextBoard;
 				}
-				
 			}
-			
-			
-			
 		}
 		
 		return null;
@@ -126,10 +146,11 @@ public class Solver {
 	 * @param base in-progress board
 	 * @return true if the boards are compatible
 	 */
-	public boolean isCompatible(Board base, int n) {
+	public boolean isCompatible(Board base, int n, Node current, Node nextClue) {
 		
 		boolean valid = true;
 		
+		// check if board and clues interfere with each other
 		for (Node node : clueBoard.clues) {
 			
 			Node baseNode = base.board[node.row][node.col];
@@ -140,11 +161,26 @@ public class Solver {
 			// if the node has already been placed and its was not placed on its clue
 			boolean clueNotFulfilled = node.value < n && baseNode.value != node.value;
 			
-			if (clueHasOtherValue || clueNotFulfilled) {
+			if (clueHasOtherValue || clueNotFulfilled) {			
 				valid = false;
 				break;
 			}
 			
+		}
+		
+		// check if it is impossible to reach the next clue
+		if (valid) {
+			
+			if (nextClue != null) {
+			
+				int distance = base.manhattanDistance(current, nextClue);
+				
+				// if clue is impossible to reach
+				if (distance > nextClue.value - current.value) {
+					
+					return false;
+				}
+			}
 		}
 		
 		return valid;
