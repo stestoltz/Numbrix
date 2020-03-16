@@ -26,3 +26,11 @@ chooses the next node from the set of neighboring nodes in a random order.
 ## Output
 prints out the clue board.
 prints out the solved board, or no solution.
+
+## Included Example Boards
+numbrix1.txt - easy 9x9 board from official website
+numbrix2.txt - easy 3x3 board
+numbrix3.txt - unsolveable 4x4 board
+numbrix4.txt - expert 9x9 board from official website
+numbrix5.txt - 20x20 board with X pattern of clues (self-created)
+numbrix6.txt - 20x20 board with reduced X pattern of clues (self-created)
